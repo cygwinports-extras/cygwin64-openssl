@@ -1,0 +1,45 @@
+CROSS_HOST="x86_64-pc-cygwin"
+inherit cross
+
+NAME="cygwin64-openssl"
+VERSION=1.0.1e
+RELEASE=1
+CATEGORY="Devel"
+SUMMARY="OpenSSL for Cygwin 64bit toolchain"
+DESCRIPTION="The OpenSSL toolkit provides support for secure communications between
+machines. OpenSSL includes a certificate management tool and shared
+libraries which provide various cryptographic algorithms and protocols."
+HOMEPAGE="http://www.openssl.org/"
+SRC_URI="ftp://ftp.openssl.org/source/openssl-${VERSION}.tar.gz"
+SRC_DIR="openssl-${VERSION}"
+PATCH_URI="
+	http://pkgs.fedoraproject.org/cgit/openssl.git/plain/openssl-1.0.0-beta5-enginesdir.patch
+	1.0.1-cygwin64.patch
+"
+
+MAKEOPTS+=" -j1"
+
+src_compile() {
+	cd ${S}
+	lndirs
+	cd ${B}
+	unset CC
+	./Configure --prefix=${CROSS_PREFIX} \
+		--cross-compile-prefix=${CROSS_HOST}- \
+		zlib no-hw no-camellia no-capieng no-cms no-gmp no-idea \
+		no-jpake no-krb5 no-mdc2 no-rc5 no-rfc3779 no-seed \
+		shared Cygwin-x86_64
+	cygmake depend
+	cygmake all build-shared
+}
+
+src_install() {
+	cd ${B}
+	cygmake install_sw INSTALL_PREFIX=${D}
+
+	rm -f ${D}${CROSS_BINDIR}/c_rehash
+	rm -f ${D}${CROSS_BINDIR}/*.exe
+	rm -rf ${D}${CROSS_LIBDIR}/engines/
+	rm -rf ${D}${CROSS_DATADIR}/man/
+	rm -rf ${D}${CROSS_PREFIX}/ssl
+}
